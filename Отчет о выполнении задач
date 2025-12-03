@@ -1,0 +1,194 @@
+# Решение практических задач
+# Скриншоты выполнения работ будут в папке
+
+## Задача 1: Сборка и публикация пользовательского образа Nginx
+
+### Цель:
+#Создать кастомный образ Nginx с изменённой индекс-страницей и опубликовать его в Docker Hub.
+
+### Выполнение:
+1. Установлен Docker и Docker Compose Plugin.
+2. Создан публичный репозиторий `custom-nginx` на Docker Hub.
+3. Скачан образ `nginx:1.21.1`.
+4. Создан `Dockerfile` и `index.html` с содержимым:
+   ```html
+   <html>
+   <head>Hey, ZGU!</head>
+   <body><p>I will be IT Engineer!</p></body>
+   </html>
+
+#Ссылка на репозиторий Docker hub - https://hub.docker.com/repository/docker/junkyard4dog/custom-nginx/general
+
+##Задача 2: Запуск контейнера и проверка доступности
+#Выполнение:
+#Запущен контейнер:
+
+bash
+docker run -d --name "ivanov-custom-nginx-t2" -p 127.0.0.1:8080:80 username/custom-nginx:1.0.0
+#Контейнер переименован:
+
+bash
+docker rename ivanov-custom-nginx-t2 custom-nginx-t2
+#Выполнена проверочная команда:
+
+bash
+date +"%d-%m-%Y %T.%N %Z" ; sleep 0.150 ; docker ps ; ss -tlpn | grep 127.0.0.1:8080 ; docker logs custom-nginx-t2 -n1 ; 
+docker exec -it custom-nginx-t2 base64 /usr/share/nginx/html/index.html
+#Проверена доступность через curl:
+
+bash
+curl http://127.0.0.1:8080
+
+Результат:
+
+##Задача 3: Взаимодействие с контейнером
+#Выполнение:
+#Подключение к потокам контейнера:
+
+bash
+docker attach custom-nginx-t2
+#Контейнер остановлен по Ctrl+C.
+
+#Проверка статуса:
+
+bash
+docker ps -a
+#Объяснение: Контейнер остановился, потому что сигнал SIGINT (Ctrl+C) был передан процессу Nginx внутри контейнера.
+
+#Перезапуск контейнера:
+
+bash
+docker start custom-nginx-t2
+#Редактирование конфигурации Nginx:
+
+#Установлен nano.
+
+#Изменён порт с 80 на 81 в /etc/nginx/conf.d/default.conf.
+
+#Выполнена перезагрузка Nginx: nginx -s reload.
+
+#Проверка портов:
+
+bash
+curl http://127.0.0.1:80
+curl http://127.0.0.1:81
+Обнаружена проблема: контейнер слушает порт 81, но опубликован порт 80 → недоступен снаружи.
+
+#Контейнер удалён без остановки:
+
+bash
+docker rm -f custom-nginx-t2
+Результат:
+
+
+##Задача 4: Работа с томами
+#Выполнение:
+#Запущены контейнеры с подключением тома:
+
+bash
+docker run -d -v $(pwd):/data --name centos-container almalinux:8 sleep infinity
+docker run -d -v $(pwd):/data --name debian-container debian:latest sleep infinity
+#Создан файл в контейнере CentOS:
+
+bash
+docker exec centos-container sh -c "echo 'Hello from CentOS' > /data/centos-file.txt"
+#Создан файл на хосте:
+
+bash
+echo "Hello from Host" > host-file.txt
+#Проверка файлов в контейнере Debian:
+
+bash
+docker exec debian-container ls -la /data/
+docker exec debian-container cat /data/centos-file.txt
+docker exec debian-container cat /data/host-file.txt
+Результат:
+
+##Задача 5: Docker Compose и Portainer
+#Выполнение:
+#Созданы файлы compose.yaml и docker-compose.yaml.
+
+#Запущен Compose:
+
+bash
+docker compose up -d
+#Запустился compose.yaml (стандартный файл для Docker Compose V2).
+
+#Файлы объединены в один compose.yaml:
+
+yaml
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  registry:
+    image: registry:2
+    ports:
+      - "5000:5000"
+#Образ custom-nginx загружен в локальный registry:
+
+bash
+docker tag username/custom-nginx:1.0.0 127.0.0.1:5000/custom-nginx
+docker push 127.0.0.1:5000/custom-nginx
+#Настроен Portainer через веб-интерфейс (http://127.0.0.1:9000).
+
+#Развёрнут стек через Portainer:
+
+yaml
+version: '3'
+services:
+  nginx:
+    image: 127.0.0.1:5000/custom-nginx
+    ports:
+      - "9090:80"
+#Сделан скриншот Inspect контейнера (от AppArmorProfile до Driver).
+
+#Удалён compose.yaml, проверено предупреждение Compose.
+
+#Проект остановлен одной командой:
+
+bash
+docker compose down
+Результат:
+
+
+
+##Задача 6: Docker-сети и взаимодействие контейнеров
+#Выполнение:
+#Создана пользовательская сеть:
+
+bash
+docker network create --driver bridge zgu-net
+#Запущены контейнеры в сети:
+
+bash
+docker run -d --name nginx-a --network zgu-net nginx:1.21.1
+docker run -d --name nginx-b --network zgu-net nginx:1.21.1
+#Проверена доступность nginx-b из nginx-a:
+
+bash
+docker exec nginx-a curl http://nginx-b
+#Объяснение: Docker предоставляет встроенный DNS-сервер в пользовательских сетях, который разрешает имена контейнеров.
+
+#Опубликован порт nginx-a на хосте:
+
+bash
+docker run -d --name nginx-a-pub --network zgu-net -p 127.0.0.1:8081:80 nginx:1.21.1
+#Проверено: curl http://127.0.0.1:8081.
+
+#Проверена сеть:
+
+bash
+docker network inspect zgu-net
+#Найдены IP-адреса контейнеров.
+
+#Отличие пользовательской сети bridge от стандартной:
+Пользовательская сеть bridge поддерживает встроенный DNS для разрешения имён контейнеров, изоляцию и более гибкие настройки.
+
+Результат:
+
+
+
