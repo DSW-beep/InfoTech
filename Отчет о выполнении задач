@@ -28,7 +28,7 @@ docker run -d --name "Sergey-custom-nginx-t2" -p 127.0.0.1:8080:80 junkyard4dogs
 #Контейнер переименован:
 
 bash
-docker rename ivanov-custom-nginx-t2 custom-nginx-t2
+docker rename junkyard4dog-custom-nginx-t2 custom-nginx-t2
 #Выполнена проверочная команда:
 
 bash
