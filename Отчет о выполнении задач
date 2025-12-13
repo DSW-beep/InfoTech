@@ -137,7 +137,7 @@ services:
 #Образ custom-nginx загружен в локальный registry:
 
 bash
-docker tag username/custom-nginx:1.0.0 127.0.0.1:5000/custom-nginx
+docker tag junkyard4dogs/custom-nginx:1.0.0 127.0.0.1:5000/custom-nginx
 docker push 127.0.0.1:5000/custom-nginx
 #Настроен Portainer через веб-интерфейс (http://127.0.0.1:9000).
 
