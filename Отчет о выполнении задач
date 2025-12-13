@@ -24,7 +24,7 @@
 #Запущен контейнер:
 
 bash
-docker run -d --name "ivanov-custom-nginx-t2" -p 127.0.0.1:8080:80 username/custom-nginx:1.0.0
+docker run -d --name "Sergey-custom-nginx-t2" -p 127.0.0.1:8080:80 junkyard4dogs/custom-nginx:1.0.0
 #Контейнер переименован:
 
 bash
